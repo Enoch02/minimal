@@ -3,6 +3,8 @@ import WebKit
 
 struct WebView: NSViewRepresentable {
     let webView: WKWebView
+	let url: String
+	
     @ObservedObject var downloadManager: DownloadManager
     
     func makeCoordinator() -> Coordinator {
@@ -12,7 +14,7 @@ struct WebView: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         webView.navigationDelegate = context.coordinator
         
-        if let url = URL(string: "https://example.com") {
+        if let url = URL(string: url) {
             webView.load(URLRequest(url: url))
         }
         
