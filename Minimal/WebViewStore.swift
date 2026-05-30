@@ -5,12 +5,13 @@ import WebKit
 final class WebViewStore: ObservableObject {
 	@Published var isLoading = false
 	@Published var estimatedProgress: Double = 0
-	@Published var currentURL: String = "https://testfilehub.github.io"
+	@Published var currentURL: String
 	
 	let webView: WKWebView
 	private var observers: [NSKeyValueObservation] = []
 	
-	init() {
+	init(startupURL: String) {
+		currentURL = startupURL
 		let configuration = WKWebViewConfiguration()
 		webView = WKWebView(frame: .zero, configuration: configuration)
 		

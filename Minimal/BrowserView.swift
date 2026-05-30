@@ -1,17 +1,20 @@
 import SwiftUI
 
 struct BrowserView: View {
-	@StateObject private var webViewStore = WebViewStore()
+	@StateObject private var webViewStore: WebViewStore
 	@StateObject private var downloadManager = DownloadManager()
 	@State private var showDownloads = false
 	
 	private let placement: ToolbarItemPlacement = .automatic
 	
+	init(startupURL: String) {
+		_webViewStore = StateObject(wrappedValue: WebViewStore(startupURL: startupURL))
+	}
+	
 	var body: some View {
 		VStack(spacing: 0) {
 			if webViewStore.isLoading {
 				ProgressView(value: webViewStore.estimatedProgress)
-				//					.progressViewStyle(.linear)
 			}
 			HStack {
 				TextField("Enter URL", text: $webViewStore.currentURL)
@@ -69,11 +72,10 @@ struct BrowserView: View {
 	}
 	
 	private func onURLSubmit() {
-//		NotificationCenter.default.post(name: .loadURL, object: urlString)
 		NotificationCenter.default.post(name: .loadURL, object: webViewStore.currentURL)
 	}
 }
 
 #Preview {
-	BrowserView()
+	BrowserView(startupURL: "https://example.com")
 }
