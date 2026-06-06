@@ -2,8 +2,8 @@ import Foundation
 import Combine
 import SwiftUI
 
-final class DownloadTask: Identifiable, ObservableObject {
-    let id = UUID()
+open class DownloadTask: Identifiable, ObservableObject {
+	public let id = UUID()
     let url: URL
     let filename: String
     @Published var output: String = ""
@@ -74,7 +74,7 @@ final class DownloadTask: Identifiable, ObservableObject {
     }
 }
 
-final class DownloadManager: ObservableObject {
+open class DownloadManager: ObservableObject {
     @Published var tasks: [DownloadTask] = []
     
     func addDownload(url: URL, cookies: String, userAgent: String, referer: String) {
