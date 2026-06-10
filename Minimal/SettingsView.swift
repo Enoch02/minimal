@@ -10,6 +10,7 @@ import SwiftUI
 struct SettingsView: View {
 	@AppStorage("terminateDownloadsOnQuit") var terminateDownloadsOnQuit: Bool = true
 	@AppStorage("urlToLoadOnStart") var urlToLoad: String = ""
+	@AppStorage("appTheme") var appTheme: String = "system"
 	
 	@State private var urlBuffer: String = ""
 	
@@ -21,6 +22,12 @@ struct SettingsView: View {
 					isOn: $terminateDownloadsOnQuit
 				)
 				.help("If enabled, all active aria2 processes will be killed when the app is closed.")
+				Picker("App Theme", selection: $appTheme) {
+					Text("System").tag("system")
+					Text("Light").tag("light")
+					Text("Dark").tag("dark")
+				}
+				.pickerStyle(SegmentedPickerStyle())
 			}
 			.tabItem {
 				Label("General", systemImage: "gearshape")

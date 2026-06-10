@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct MinimalApp: App {
 	@NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+	@AppStorage("appTheme") var appTheme: String = "system"
 	@AppStorage("urlToLoadOnStart") var startupURL: String = "https://example.com"
 	
 	init() {
@@ -23,6 +24,7 @@ struct MinimalApp: App {
 	var body: some Scene {
 		WindowGroup {
 			BrowserView(startupURL: startupURL)
+			.preferredColorScheme(appTheme == "light" ? .light : appTheme == "dark" ? .dark : nil)
 		}
 		
 		Settings {
