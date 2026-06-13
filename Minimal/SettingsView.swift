@@ -22,6 +22,7 @@ struct SettingsView: View {
 					isOn: $terminateDownloadsOnQuit
 				)
 				.help("If enabled, all active aria2 processes will be killed when the app is closed.")
+				
 				Picker("App Theme", selection: $appTheme) {
 					Text("System").tag("system")
 					Text("Light").tag("light")
@@ -67,6 +68,7 @@ struct SettingsView: View {
 		}
 		.padding()
 		.frame(width: 400, height: 150)
+		.preferredColorScheme(appTheme == "light" ? .light : appTheme == "dark" ? .dark : nil)
 		.onAppear {
 			urlBuffer = urlToLoad
 		}
