@@ -1,21 +1,52 @@
 import SwiftUI
 
 struct BrowserView: View {
-	@StateObject private var webViewStore: WebViewStore
+	@StateObject private var tabManager: TabManager
 	@StateObject private var downloadManager = DownloadManager()
 	@State private var showDownloads = false
 	
-	private let placement: ToolbarItemPlacement = .automatic
-	
 	init(startupURL: String) {
-		_webViewStore = StateObject(wrappedValue: WebViewStore(startupURL: startupURL))
+		_tabManager = StateObject(
+			wrappedValue: TabManager(startupURL: startupURL)
+		)
 	}
 	
 	var body: some View {
 		VStack(spacing: 0) {
-			if webViewStore.isLoading {
-				ProgressView(value: webViewStore.estimatedProgress)
-			}
+			TabBarView(tabManager: tabManager)
+			
+			Divider()
+			
+			ActiveTabContentView(
+				webViewStore: tabManager.selectedTab.webViewStore,
+				downloadManager: downloadManager,
+				showDownloads: $showDownloads,
+				onNewTabRequested: { url in
+					tabManager.addTab(url: url.absoluteString)
+				}
+			)
+			.id(tabManager.selectedTabID)
+		}
+		.frame(minWidth: 1000, minHeight: 700)
+		.focusedValue(\.tabManager, tabManager)
+	}
+}
+
+// MARK: - Per-Tab Content
+
+/// Extracted so that `@ObservedObject` properly subscribes to
+/// the selected tab's `WebViewStore` and re-renders when its
+/// `isLoading`, `estimatedProgress`, or `currentURL` change.
+private struct ActiveTabContentView: View {
+	@ObservedObject var webViewStore: WebViewStore
+	@ObservedObject var downloadManager: DownloadManager
+	@Binding var showDownloads: Bool
+	var onNewTabRequested: (URL) -> Void
+	
+	private let placement: ToolbarItemPlacement = .automatic
+	
+	var body: some View {
+		VStack(spacing: 0) {
 			HStack {
 				TextField("Enter URL", text: $webViewStore.currentURL)
 					.textFieldStyle(.roundedBorder)
@@ -28,11 +59,19 @@ struct BrowserView: View {
 					onURLSubmit()
 				}
 			}
-			.padding()
+			.padding(.horizontal, 6)
+			.padding(.vertical, 3)
 			
-			WebView(webView: webViewStore.webView, url: webViewStore.currentURL, downloadManager: downloadManager)
+			if webViewStore.isLoading {
+				ProgressView(value: webViewStore.estimatedProgress)
+			}
+			
+			WebView(
+				webView: webViewStore.webView,
+				downloadManager: downloadManager,
+				onNewTabRequested: onNewTabRequested
+			)
 		}
-		.frame(minWidth: 1000, minHeight: 700)
 		.toolbar(
 			content: {
 				ToolbarItem(placement: placement) {
@@ -72,7 +111,7 @@ struct BrowserView: View {
 	}
 	
 	private func onURLSubmit() {
-		NotificationCenter.default.post(name: .loadURL, object: webViewStore.currentURL)
+		webViewStore.loadURL(webViewStore.currentURL)
 	}
 }
 

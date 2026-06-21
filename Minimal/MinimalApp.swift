@@ -12,6 +12,7 @@ struct MinimalApp: App {
 	@NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 	@AppStorage("appTheme") var appTheme: String = "system"
 	@AppStorage("urlToLoadOnStart") var startupURL: String = "https://example.com"
+	@FocusedValue(\.tabManager) var focusedTabManager
 	
 	init() {
 		UserDefaults.standard.register(defaults: [
@@ -24,7 +25,30 @@ struct MinimalApp: App {
 	var body: some Scene {
 		WindowGroup {
 			BrowserView(startupURL: startupURL)
-			.preferredColorScheme(appTheme == "light" ? .light : appTheme == "dark" ? .dark : nil)
+				.preferredColorScheme(
+					appTheme == "light" ? .light
+					: appTheme == "dark" ? .dark : nil
+				)
+		}
+		.commands {
+			CommandGroup(after: .newItem) {
+				Button("New Tab") {
+					focusedTabManager?.addTab()
+				}
+				.keyboardShortcut("t", modifiers: .command)
+				
+				Button("Close Tab") {
+					if let manager = focusedTabManager {
+						if manager.tabs.count > 1 {
+							manager.closeTab(manager.selectedTab)
+						}
+					}
+				}
+				.keyboardShortcut("w", modifiers: .command)
+				.disabled(
+					(focusedTabManager?.tabs.count ?? 0) <= 1
+				)
+			}
 		}
 		
 		Settings {

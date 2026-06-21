@@ -6,6 +6,7 @@ final class WebViewStore: ObservableObject {
 	@Published var isLoading = false
 	@Published var estimatedProgress: Double = 0
 	@Published var currentURL: String
+	@Published var title: String = ""
 	
 	let webView: WKWebView
 	private var observers: [NSKeyValueObservation] = []
@@ -16,6 +17,18 @@ final class WebViewStore: ObservableObject {
 		webView = WKWebView(frame: .zero, configuration: configuration)
 		
 		setupObservers()
+		
+		if !startupURL.isEmpty, let url = URL(string: startupURL) {
+			webView.load(URLRequest(url: url))
+		}
+	}
+	
+	func loadURL(_ urlString: String) {
+		let formatted = urlString.hasPrefix("http")
+			? urlString
+			: "https://\(urlString)"
+		guard let url = URL(string: formatted) else { return }
+		webView.load(URLRequest(url: url))
 	}
 	
 	private func setupObservers() {
@@ -50,7 +63,22 @@ final class WebViewStore: ObservableObject {
 			 }
 		)
 		
-		observers = [loadingObserver, progressObserver, currentURLObserver]
+		let titleObserver = webView.observe(
+			\.title,
+			 options: [.initial, .new],
+			 changeHandler: { [weak self] webview, _ in
+				 DispatchQueue.main.async {
+					 self?.title = webview.title ?? ""
+				 }
+			 }
+		)
+		
+		observers = [
+			loadingObserver,
+			progressObserver,
+			currentURLObserver,
+			titleObserver,
+		]
 	}
 }
 
