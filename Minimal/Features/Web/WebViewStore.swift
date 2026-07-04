@@ -2,14 +2,28 @@ import Combine
 import SwiftUI
 import WebKit
 
+struct WebError: Identifiable, Equatable {
+	let id = UUID()
+	let code: Int
+	let domain: String
+	let description: String
+	let failingURL: String?
+
+	static func == (lhs: WebError, rhs: WebError) -> Bool {
+		lhs.id == rhs.id
+	}
+}
+
 final class WebViewStore: ObservableObject {
 	@Published var isLoading = false
 	@Published var estimatedProgress: Double = 0
 	@Published var currentURL: String
 	@Published var title: String = ""
-	
+	@Published var error: WebError?
+
 	let webView: WKWebView
 	private var observers: [NSKeyValueObservation] = []
+	private var lastRecordedURL: String?
 	
 	init(startupURL: String) {
 		currentURL = startupURL
@@ -58,7 +72,20 @@ final class WebViewStore: ObservableObject {
 			 options: [.initial, .new],
 			 changeHandler: { [weak self] webview, _ in
 				 DispatchQueue.main.async {
-					 self?.currentURL = webview.url?.absoluteString ?? ""
+					 let urlString = webview.url?.absoluteString ?? ""
+					 self?.currentURL = urlString
+
+					 guard
+						 let self,
+						 !urlString.isEmpty,
+						 urlString != self.lastRecordedURL
+					 else { return }
+
+					 self.lastRecordedURL = urlString
+					 HistoryManager.shared.addVisit(
+						url: urlString,
+						title: webview.title ?? ""
+					 )
 				 }
 			 }
 		)

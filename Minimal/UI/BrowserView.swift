@@ -87,11 +87,27 @@ private struct ActiveTabContentView: View {
 				ProgressView(value: webViewStore.estimatedProgress)
 			}
 			
-			WebView(
-				webView: webViewStore.webView,
-				downloadManager: downloadManager,
-				onNewTabRequested: onNewTabRequested
-			)
+			ZStack {
+				WebView(
+					webView: webViewStore.webView,
+					webViewStore: webViewStore,
+					downloadManager: downloadManager,
+					onNewTabRequested: onNewTabRequested
+				)
+
+				if let error = webViewStore.error {
+					ErrorPageView(
+						error: error,
+						onRetry: {
+							if let url = error.failingURL {
+								webViewStore.loadURL(url)
+							} else {
+								webViewStore.loadURL(webViewStore.currentURL)
+							}
+						}
+					)
+				}
+			}
 		}
 		.toolbar(
 			content: {
