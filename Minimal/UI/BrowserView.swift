@@ -4,6 +4,7 @@ struct BrowserView: View {
 	@StateObject private var tabManager: TabManager
 	@StateObject private var downloadManager = DownloadManager()
 	@State private var showDownloads = false
+	@State private var showHistory = false
 	
 	init(startupURL: String) {
 		_tabManager = StateObject(
@@ -12,23 +13,42 @@ struct BrowserView: View {
 	}
 	
 	var body: some View {
-		VStack(spacing: 0) {
-			TabBarView(tabManager: tabManager)
-			
-			Divider()
-			
-			ActiveTabContentView(
-				webViewStore: tabManager.selectedTab.webViewStore,
-				downloadManager: downloadManager,
-				showDownloads: $showDownloads,
-				onNewTabRequested: { url in
-					tabManager.addTab(url: url.absoluteString)
+		HStack(spacing: 0) {
+			if showHistory {
+				HistorySidebarView { url in
+					tabManager.selectedTab.webViewStore.loadURL(url)
+					showHistory = false
 				}
-			)
-			.id(tabManager.selectedTabID)
+				
+				Divider()
+			}
+			
+			VStack(spacing: 0) {
+				TabBarView(tabManager: tabManager)
+				
+				Divider()
+				
+				ActiveTabContentView(
+					webViewStore: tabManager.selectedTab.webViewStore,
+					downloadManager: downloadManager,
+					showDownloads: $showDownloads,
+					showHistory: $showHistory,
+					onNewTabRequested: { url in
+						tabManager.addTab(url: url.absoluteString)
+					}
+				)
+				.id(tabManager.selectedTabID)
+			}
 		}
 		.frame(minWidth: 1000, minHeight: 700)
 		.focusedValue(\.tabManager, tabManager)
+		.background(
+			Button("") {
+				showHistory.toggle()
+			}
+			.keyboardShortcut("y", modifiers: .command)
+			.hidden()
+		)
 	}
 }
 
@@ -41,6 +61,7 @@ private struct ActiveTabContentView: View {
 	@ObservedObject var webViewStore: WebViewStore
 	@ObservedObject var downloadManager: DownloadManager
 	@Binding var showDownloads: Bool
+	@Binding var showHistory: Bool
 	var onNewTabRequested: (URL) -> Void
 	
 	private let placement: ToolbarItemPlacement = .automatic
@@ -96,6 +117,14 @@ private struct ActiveTabContentView: View {
 					}
 				}
 				
+				ToolbarItem(placement: placement) {
+					Button {
+						showHistory.toggle()
+					} label: {
+						Label("History", systemImage: "clock")
+					}
+				}
+
 				ToolbarItem(placement: placement) {
 					Button {
 						showDownloads.toggle()
