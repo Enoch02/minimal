@@ -22,12 +22,17 @@ final class WebViewStore: ObservableObject {
 	@Published var error: WebError?
 
 	let webView: WKWebView
+	let isIncognito: Bool
 	private var observers: [NSKeyValueObservation] = []
 	private var lastRecordedURL: String?
 	
-	init(startupURL: String) {
+	init(startupURL: String, isIncognito: Bool = false) {
+		self.isIncognito = isIncognito
 		currentURL = startupURL
 		let configuration = WKWebViewConfiguration()
+		if isIncognito {
+			configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
+		}
 		webView = WKWebView(frame: .zero, configuration: configuration)
 		
 		setupObservers()
@@ -78,7 +83,8 @@ final class WebViewStore: ObservableObject {
 					 guard
 						 let self,
 						 !urlString.isEmpty,
-						 urlString != self.lastRecordedURL
+						 urlString != self.lastRecordedURL,
+						 !self.isIncognito
 					 else { return }
 
 					 self.lastRecordedURL = urlString

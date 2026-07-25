@@ -30,11 +30,19 @@ struct BrowserView: View {
 				
 				ActiveTabContentView(
 					webViewStore: tabManager.selectedTab.webViewStore,
+					isIncognito: tabManager.selectedTab.isIncognito,
 					downloadManager: downloadManager,
 					showDownloads: $showDownloads,
 					showHistory: $showHistory,
 					onNewTabRequested: { url in
-						tabManager.addTab(url: url.absoluteString)
+						if tabManager.selectedTab.isIncognito {
+							tabManager.addIncognitoTab(url: url.absoluteString)
+						} else {
+							tabManager.addTab(url: url.absoluteString)
+						}
+					},
+					onNewIncognitoTabRequested: {
+						tabManager.addIncognitoTab()
 					}
 				)
 				.id(tabManager.selectedTabID)
@@ -59,16 +67,24 @@ struct BrowserView: View {
 /// `isLoading`, `estimatedProgress`, or `currentURL` change.
 private struct ActiveTabContentView: View {
 	@ObservedObject var webViewStore: WebViewStore
+	let isIncognito: Bool
 	@ObservedObject var downloadManager: DownloadManager
 	@Binding var showDownloads: Bool
 	@Binding var showHistory: Bool
 	var onNewTabRequested: (URL) -> Void
+	var onNewIncognitoTabRequested: () -> Void
 	
 	private let placement: ToolbarItemPlacement = .automatic
 	
 	var body: some View {
 		VStack(spacing: 0) {
 			HStack {
+				if isIncognito {
+					Image(systemName: "eye.slash")
+						.foregroundStyle(.purple)
+						.help("Incognito")
+				}
+				
 				TextField("Enter URL", text: $webViewStore.currentURL)
 					.textFieldStyle(.roundedBorder)
 					.submitLabel(.go)
@@ -146,6 +162,12 @@ private struct ActiveTabContentView: View {
 						showDownloads.toggle()
 					} label: {
 						Label("Downloads", systemImage: "arrow.down.circle")
+					}
+				}
+				
+				ToolbarItem(placement: placement) {
+					Button(action: onNewIncognitoTabRequested) {
+						Label("New Incognito Tab", systemImage: "eye.slash")
 					}
 				}
 			}

@@ -37,6 +37,11 @@ struct MinimalApp: App {
 				}
 				.keyboardShortcut("t", modifiers: .command)
 				
+				Button("New Incognito Tab") {
+					focusedTabManager?.addIncognitoTab()
+				}
+				.keyboardShortcut("n", modifiers: [.command, .shift])
+				
 				Button("Close Tab") {
 					if let manager = focusedTabManager {
 						if manager.tabs.count > 1 {

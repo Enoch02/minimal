@@ -14,12 +14,20 @@ final class TabManager: ObservableObject {
 		selectedTabID = firstTab.id
 	}
 
-	@discardableResult // tell the compiler it's okay if the callers ignore the return values
+	@discardableResult
 	func addTab(url: String = "") -> TabModel {
 		let tab = TabModel(url: url)
 		tabs.append(tab)
 		selectedTabID = tab.id
 		
+		return tab
+	}
+
+	@discardableResult
+	func addIncognitoTab(url: String = "") -> TabModel {
+		let tab = TabModel(url: url, isIncognito: true)
+		tabs.append(tab)
+		selectedTabID = tab.id
 		return tab
 	}
 

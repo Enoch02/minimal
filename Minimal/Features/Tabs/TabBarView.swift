@@ -10,6 +10,7 @@ struct TabBarView: View {
 					ForEach(tabManager.tabs) { tab in
 						TabItemView(
 							webViewStore: tab.webViewStore,
+							isIncognito: tab.isIncognito,
 							isSelected: tab.id == tabManager.selectedTabID,
 							canClose: tabManager.tabs.count > 1,
 							onSelect: { tabManager.selectTab(tab) },
@@ -43,6 +44,7 @@ struct TabBarView: View {
 
 private struct TabItemView: View {
 	@ObservedObject var webViewStore: WebViewStore
+	let isIncognito: Bool
 	let isSelected: Bool
 	let canClose: Bool
 	let onSelect: () -> Void
@@ -60,6 +62,12 @@ private struct TabItemView: View {
 	
 	var body: some View {
 		HStack(spacing: 4) {
+			if isIncognito {
+				Image(systemName: "eye.slash")
+					.font(.system(size: 10))
+					.foregroundStyle(.secondary)
+			}
+			
 			Text(displayTitle)
 				.font(.system(size: 12))
 				.lineLimit(1)
@@ -76,7 +84,6 @@ private struct TabItemView: View {
 				}
 				.buttonStyle(.plain)
 			} else if canClose {
-				// Reserve space so tabs don't shift on hover
 				Color.clear
 					.frame(width: 16, height: 16)
 			}
