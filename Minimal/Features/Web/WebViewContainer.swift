@@ -79,6 +79,10 @@ struct WebView: NSViewRepresentable {
 					return
 				}
 
+				DispatchQueue.main.async {
+					self.webViewStore.error = nil
+				}
+
 				Task {
 					await sendToAria2(webView: webView, downloadURL: url)
 				}
@@ -110,6 +114,14 @@ struct WebView: NSViewRepresentable {
 			let nsError = error as NSError
 
 			guard nsError.domain != NSURLErrorDomain || nsError.code != NSURLErrorCancelled else {
+				return
+			}
+
+			guard nsError.domain != "WebKitErrorDomain" || nsError.code != 102 else {
+				return
+			}
+
+			guard nsError.domain != WKErrorDomain || !(1...2).contains(nsError.code) else {
 				return
 			}
 

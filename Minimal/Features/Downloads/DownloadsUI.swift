@@ -1,5 +1,47 @@
 import SwiftUI
 
+struct DownloadRowView: View {
+    @ObservedObject var task: DownloadTask
+    var onCancel: () -> Void
+    var onSelect: () -> Void
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(task.filename)
+                    .font(.headline)
+                Text(task.url.absoluteString)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                if !task.isFinished {
+                    ProgressView(value: task.progress)
+                        .progressViewStyle(.linear)
+                        .frame(maxWidth: .infinity)
+                    Text("\(Int(task.progress * 100))%")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Spacer()
+
+            if task.isFinished {
+                Text("Finished")
+                    .foregroundColor(.green)
+            } else {
+                Button("Cancel") {
+                    onCancel()
+                }
+                .buttonStyle(.bordered)
+                .foregroundColor(.red)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { onSelect() }
+    }
+}
+
 struct DownloadsListView: View {
     @ObservedObject var manager: DownloadManager
     @Environment(\.dismiss) var dismiss
@@ -8,33 +50,11 @@ struct DownloadsListView: View {
     var body: some View {
         NavigationStack {
             List(manager.tasks) { task in
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(task.filename)
-                            .font(.headline)
-                        Text(task.url.absoluteString)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                    
-                    Spacer()
-                    
-                    if task.isFinished {
-                        Text("Finished")
-                            .foregroundColor(.green)
-                    } else {
-                        Button("Cancel") {
-                            manager.cancelTask(task)
-                        }
-                        .buttonStyle(.bordered)
-                        .foregroundColor(.red)
-                    }
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    selectedTask = task
-                }
+                DownloadRowView(
+                    task: task,
+                    onCancel: { manager.cancelTask(task) },
+                    onSelect: { selectedTask = task }
+                )
             }
             .navigationTitle("Downloads")
             .toolbar {
@@ -80,6 +100,18 @@ struct DownloadDetailView: View {
             }
             .padding()
             .background(.ultraThinMaterial)
+            
+            if !task.isFinished {
+                VStack(spacing: 4) {
+                    ProgressView(value: task.progress)
+                        .progressViewStyle(.linear)
+                    Text("\(Int(task.progress * 100))%")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+            }
             
             ScrollViewReader { proxy in
                 ScrollView {

@@ -8,13 +8,30 @@ open class DownloadTask: Identifiable, ObservableObject {
     let filename: String
     @Published var output: String = ""
     @Published var isFinished: Bool = false
+    @Published var progress: Double = 0.0
     
     var process: Process?
     private var outputPipe: Pipe?
+    private var fullOutput: String = ""
+    private var progressRegex: NSRegularExpression = {
+        try! NSRegularExpression(pattern: "(?:\\(|\\s|^)(\\d+)%")
+    }()
     
     init(url: URL) {
         self.url = url
         self.filename = url.lastPathComponent.isEmpty ? url.absoluteString : url.lastPathComponent
+    }
+    
+    private func parseProgress(from output: String) -> Double {
+        let tail = String(output.suffix(1000))
+        let range = NSRange(location: 0, length: tail.utf16.count)
+        let matches = progressRegex.matches(in: tail, range: range)
+        guard let lastMatch = matches.last,
+              let valueRange = Range(lastMatch.range(at: 1), in: tail),
+              let percentage = Double(tail[valueRange]) else {
+            return self.progress
+        }
+        return percentage / 100.0
     }
     
     func start(cookies: String, userAgent: String, referer: String) {
@@ -50,7 +67,9 @@ open class DownloadTask: Identifiable, ObservableObject {
             }
             if let str = String(data: data, encoding: .utf8) {
                 DispatchQueue.main.async {
-                    self?.output += str
+                    self?.fullOutput += str
+                    self?.output = self?.fullOutput ?? str
+                    self?.progress = self?.parseProgress(from: self?.fullOutput ?? str) ?? 0.0
                 }
             }
         }
@@ -58,6 +77,7 @@ open class DownloadTask: Identifiable, ObservableObject {
         process.terminationHandler = { [weak self] _ in
             DispatchQueue.main.async {
                 self?.isFinished = true
+                self?.progress = 1.0
             }
         }
         
