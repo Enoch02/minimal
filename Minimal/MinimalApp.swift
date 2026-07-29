@@ -17,9 +17,9 @@ struct MinimalApp: App {
 	init() {
 		UserDefaults.standard.register(defaults: [
 			"urlToLoadOnStart": "https://example.com",
-			"terminateDownloadsOnQuit": true
-		]
-		)
+			"terminateDownloadsOnQuit": true,
+			"askForDownloadLocation": false
+		])
 	}
 	
 	var body: some Scene {

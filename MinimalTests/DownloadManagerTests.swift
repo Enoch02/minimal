@@ -8,7 +8,7 @@ final class TestDownloadTask: DownloadTask {
     var injectedOutputs: [String] = []
     var chunkDelay: TimeInterval = 0.001
     
-    override func start(cookies: String = "", userAgent: String = "", referer: String = "") {
+    override func start(cookies: String = "", userAgent: String = "", referer: String = "", directory: String = "") {
         DispatchQueue.main.async {
             self.isFinished = false
         }

@@ -34,15 +34,13 @@ open class DownloadTask: Identifiable, ObservableObject {
         return percentage / 100.0
     }
     
-    func start(cookies: String, userAgent: String, referer: String) {
+    func start(cookies: String, userAgent: String, referer: String, directory: String) {
         let process = Process()
         self.process = process
         process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/aria2c")
         
-        let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
-        
         process.arguments = [
-            "--dir=\(downloads.path)",
+            "--dir=\(directory)",
             "--max-connection-per-server=16",
             "--split=16",
             "--min-split-size=1M",
@@ -98,11 +96,37 @@ open class DownloadManager: ObservableObject {
     @Published var tasks: [DownloadTask] = []
     
     func addDownload(url: URL, cookies: String, userAgent: String, referer: String) {
+        let defaults = UserDefaults.standard
+        let askEachTime = defaults.bool(forKey: "askForDownloadLocation")
+
+        var directory: String
+        if askEachTime {
+            let picked = Thread.isMainThread
+                ? Self.pickDownloadDirectory()
+                : DispatchQueue.main.sync { Self.pickDownloadDirectory() }
+            guard let picked else { return }
+            directory = picked
+        } else {
+            let savedPath = defaults.string(forKey: "defaultDownloadDirectory")
+            directory = savedPath ?? FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!.path
+        }
+
         let task = DownloadTask(url: url)
         DispatchQueue.main.async {
             self.tasks.append(task)
-            task.start(cookies: cookies, userAgent: userAgent, referer: referer)
+            task.start(cookies: cookies, userAgent: userAgent, referer: referer, directory: directory)
         }
+    }
+
+    private static func pickDownloadDirectory() -> String? {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.message = "Choose download destination"
+        panel.prompt = "Select"
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        return url.path
     }
     
     func cancelTask(_ task: DownloadTask) {
